@@ -4,10 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/index",
+    "start": "node index",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint . --ext .ts",
     "postinstall": "npm run build"
+  },
+  "engines": {
+    "node": "14.x"
   },
   "keywords": [],
   "author": "Alice",

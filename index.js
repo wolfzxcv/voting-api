@@ -12,7 +12,6 @@ import { nanoid } from 'nanoid';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import app from './setting.js';
-const port = 3000;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const file = join(__dirname, 'db.json');
 const db = new LowSync(new JSONFileSync(file));
@@ -26,11 +25,14 @@ const dataExist = (all, id) => {
     return all.find((p) => p.id === id);
 };
 const generateOutput = (originVote) => {
-    const output = Object.assign({}, originVote);
-    const total = output.result.win + output.result.lose + output.result.draw;
-    const winRate = Math.round((output.result.win / total) * 100);
-    const loseRate = Math.round((output.result.lose / total) * 100);
-    const drawRate = 100 - winRate - loseRate;
+    const output = JSON.parse(JSON.stringify(originVote));
+    const win = output.result.win;
+    const lose = output.result.lose;
+    const draw = output.result.draw;
+    const total = win + lose + draw;
+    const winRate = Math.round((win / total) * 100) || 0;
+    const loseRate = Math.round((lose / total) * 100) || 0;
+    const drawRate = win === 0 && lose === 0 && draw === 0 ? 0 : 100 - winRate - loseRate;
     output.result.winRate = winRate + '%';
     output.result.loseRate = loseRate + '%';
     output.result.drawRate = drawRate + '%';
@@ -46,7 +48,7 @@ app.get('/vote/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* (
         res.status(200).json({
             msg: `Votes id "${req.params.id}" got!`,
             code: 1,
-            data: generateOutput(vote),
+            data: Object.assign({}, generateOutput(vote)),
             status: 'success'
         });
     }
@@ -87,7 +89,7 @@ app.post('/vote', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(200).json({
             msg: 'New vote added!',
             code: 1,
-            data: votes,
+            data: newVote,
             status: 'success'
         });
     }
@@ -108,7 +110,7 @@ app.patch('/vote', (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 res.status(200).json({
                     msg: 'success',
                     code: 1,
-                    data: generateOutput(vote),
+                    data: Object.assign({}, generateOutput(votes[idx])),
                     status: 'success'
                 });
             }
@@ -155,10 +157,11 @@ app.delete('/vote/:id', (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 }));
 try {
-    app.listen(port, () => {
-        console.log(`Connected successfully on port ${port}`);
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
     });
 }
 catch (error) {
-    console.error(`Error occured: ${error}`);
+    console.error(`Error: ${error}`);
 }

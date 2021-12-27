@@ -4,8 +4,6 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import app from './setting.js';
 
-const port = 3000;
-
 type IData = {
   votes: IVote[];
 };
@@ -49,11 +47,16 @@ const dataExist = (all: IData['votes'], id: string) => {
 };
 
 const generateOutput = (originVote: IVote) => {
-  const output = Object.assign({}, originVote);
-  const total = output.result.win + output.result.lose + output.result.draw;
-  const winRate = Math.round((output.result.win / total) * 100);
-  const loseRate = Math.round((output.result.lose / total) * 100);
-  const drawRate = 100 - winRate - loseRate;
+  const output = JSON.parse(JSON.stringify(originVote));
+
+  const win = output.result.win;
+  const lose = output.result.lose;
+  const draw = output.result.draw;
+  const total = win + lose + draw;
+  const winRate = Math.round((win / total) * 100) || 0;
+  const loseRate = Math.round((lose / total) * 100) || 0;
+  const drawRate =
+    win === 0 && lose === 0 && draw === 0 ? 0 : 100 - winRate - loseRate;
 
   output.result.winRate = winRate + '%';
   output.result.loseRate = loseRate + '%';
@@ -73,7 +76,7 @@ app.get('/vote/:id', async (req, res) => {
     res.status(200).json({
       msg: `Votes id "${req.params.id}" got!`,
       code: 1,
-      data: generateOutput(vote),
+      data: { ...generateOutput(vote) },
       status: 'success'
     });
   } catch {
@@ -111,12 +114,11 @@ app.post('/vote', async (req, res) => {
     };
 
     votes.push(newVote);
-
     await db.write();
     res.status(200).json({
       msg: 'New vote added!',
       code: 1,
-      data: votes,
+      data: newVote,
       status: 'success'
     });
   } catch {
@@ -134,12 +136,11 @@ app.patch('/vote', async (req, res) => {
       if (vote) {
         const idx = votes.indexOf(vote);
         votes[idx]['result'][option] = votes[idx]['result'][option] + 1;
-
         await db.write();
         res.status(200).json({
           msg: 'success',
           code: 1,
-          data: generateOutput(vote),
+          data: { ...generateOutput(votes[idx]) },
           status: 'success'
         });
       } else {
@@ -164,7 +165,6 @@ app.delete('/vote/:id', async (req, res) => {
       const idx = votes.indexOf(vote);
       votes.splice(idx, 1);
       await db.write();
-
       res.status(200).json({
         msg: `Vote id "${req.params.id}" deleted!`,
         data: votes,
@@ -184,9 +184,10 @@ app.delete('/vote/:id', async (req, res) => {
 });
 
 try {
-  app.listen(port, (): void => {
-    console.log(`Connected successfully on port ${port}`);
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, (): void => {
+    console.log(`Server running on port ${PORT}`);
   });
 } catch (error) {
-  console.error(`Error occured: ${error}`);
+  console.error(`Error: ${error}`);
 }
