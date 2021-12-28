@@ -41,7 +41,7 @@
 
 ```json=
 {
-    "title": "支持買可樂555"
+    "title": "Do you agree everyone should have the right to drink soda?"
 }
 ```
 
@@ -57,8 +57,9 @@
 
 ```json=
 {
-    "id":"ab1UunUVvHTVcGGEoe1Br", // vote id
-    "option" : "win" // either "win", "lose", "draw"
+    "id":"ab1UunUVvHTVcGGEoe1Br", // vote id => required
+    "title: "Hi everyone", // modify the tile => optional
+    "option" : "win" // either "win", "lose", "draw" => required
 }
 ```
 
@@ -72,4 +73,9 @@
 | path   | **/vote/:id** |
 | param  | required      |
 
-![](https://i.imgur.com/tf4cAVs.jpg)
+- You can list vote ids in the whitelist in **db.json** if you want to prevent certain ids from being deleted.
+  ![](https://i.imgur.com/tf4cAVs.jpg)
+
+## Whitelist
+
+![](https://i.imgur.com/YHK1GYS.jpg)

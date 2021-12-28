@@ -1,3 +1,16 @@
 {
-  "votes": []
+  "whitelist": [
+    "Yui5_2-OhmRKOlNEET4UE"
+  ],
+  "votes": [
+    {
+      "id": "Yui5_2-OhmRKOlNEET4UE",
+      "title": "Do you agree everyone has the right to drink soda?",
+      "result": {
+        "win": 85,
+        "lose": 72,
+        "draw": 25
+      }
+    }
+  ]
 }

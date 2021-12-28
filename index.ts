@@ -2,31 +2,11 @@ import { JSONFileSync, LowSync } from 'lowdb';
 import { nanoid } from 'nanoid';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { IData, IUpdateVoteOption } from './@types/index.js';
 import app from './setting.js';
+import { dataExist, generateOutput } from './utils.js';
 
-type IData = {
-  votes: IVote[];
-};
-
-type IVote = {
-  id: string;
-  title: string;
-  result: {
-    win: number;
-    winRate?: string;
-    lose: number;
-    loseRate?: string;
-    draw: number;
-    drawRate?: string;
-    total?: number;
-  };
-};
-
-type IUpdateVoteOption = {
-  id: string;
-  option: 'win' | 'lose' | 'draw';
-};
-
+// lowdb settings
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const file = join(__dirname, 'db.json');
 
@@ -38,60 +18,39 @@ const readDb = async () => {
 
 readDb();
 
-db.data = db.data || { votes: [] };
+db.data = db.data || { whitelist: [], votes: [] };
 
-const { votes } = db.data as IData;
+const { votes, whitelist } = db.data as IData;
 
-const dataExist = (all: IData['votes'], id: string) => {
-  return all.find((p) => p.id === id);
-};
-
-const generateOutput = (originVote: IVote) => {
-  const output = JSON.parse(JSON.stringify(originVote));
-
-  const win = output.result.win;
-  const lose = output.result.lose;
-  const draw = output.result.draw;
-  const total = win + lose + draw;
-  const winRate = Math.round((win / total) * 100) || 0;
-  const loseRate = Math.round((lose / total) * 100) || 0;
-  const drawRate =
-    win === 0 && lose === 0 && draw === 0 ? 0 : 100 - winRate - loseRate;
-
-  output.result.winRate = winRate + '%';
-  output.result.loseRate = loseRate + '%';
-  output.result.drawRate = drawRate + '%';
-  output.result.total = total;
-
-  return output;
-};
-
+// get one
 app.get('/vote/:id', async (req, res) => {
   try {
     const vote = dataExist(votes, req.params.id);
+
     if (!vote) {
       throw new Error();
     }
 
     res.status(200).json({
-      msg: `Votes id "${req.params.id}" got!`,
+      msg: `Votes "${req.params.id}" got.`,
       code: 1,
-      data: { ...generateOutput(vote) },
+      data: generateOutput(vote),
       status: 'success'
     });
   } catch {
     res.status(400).json({
-      msg: `Can't get vote id "${req.params.id}".`,
+      msg: `Can't get vote "${req.params.id}".`,
       code: 0,
       status: 'error'
     });
   }
 });
 
+// get all
 app.get('/votes', async (req, res) => {
   try {
     res.status(200).json({
-      msg: 'Votes got!',
+      msg: 'Votes got.',
       code: 1,
       data: votes,
       status: 'success'
@@ -101,11 +60,14 @@ app.get('/votes', async (req, res) => {
   }
 });
 
+// post
 app.post('/vote', async (req, res) => {
   try {
+    const title = req.body.title;
+
     const newVote = {
       id: nanoid(),
-      title: (req.body.title as string) || '',
+      title: title ? (title.toString() as string) : '',
       result: {
         win: 0,
         lose: 0,
@@ -114,7 +76,9 @@ app.post('/vote', async (req, res) => {
     };
 
     votes.push(newVote);
+
     await db.write();
+
     res.status(200).json({
       msg: 'New vote added!',
       code: 1,
@@ -126,21 +90,31 @@ app.post('/vote', async (req, res) => {
   }
 });
 
+// patch
 app.patch('/vote', async (req, res) => {
   try {
-    const { id, option } = req.body as IUpdateVoteOption;
+    const { id, option, title } = req.body as IUpdateVoteOption;
     const validOption =
       option === 'win' || option === 'lose' || option === 'draw';
+
     if (id && option && validOption) {
       const vote = dataExist(votes, id);
+
       if (vote) {
         const idx = votes.indexOf(vote);
+
         votes[idx]['result'][option] = votes[idx]['result'][option] + 1;
+
+        if (title && title.length) {
+          votes[idx]['title'] = title;
+        }
+
         await db.write();
+
         res.status(200).json({
           msg: 'success',
           code: 1,
-          data: { ...generateOutput(votes[idx]) },
+          data: generateOutput(votes[idx]),
           status: 'success'
         });
       } else {
@@ -158,25 +132,33 @@ app.patch('/vote', async (req, res) => {
   }
 });
 
+// delete
 app.delete('/vote/:id', async (req, res) => {
+  let msg;
   try {
-    const vote = dataExist(votes, req.params.id);
-    if (vote) {
+    const id = req.params.id;
+
+    const vote = dataExist(votes, id);
+
+    if (vote && whitelist.find((eachId) => eachId === id)) {
+      msg = `"${id}" is protected.`;
+      throw new Error();
+    } else if (vote) {
       const idx = votes.indexOf(vote);
       votes.splice(idx, 1);
       await db.write();
       res.status(200).json({
         msg: `Vote id "${req.params.id}" deleted!`,
-        data: votes,
         code: 1,
         status: 'success'
       });
     } else {
+      msg = `Can't find vote id "${id}".`;
       throw new Error();
     }
-  } catch {
+  } catch (e) {
     res.status(400).json({
-      msg: `Can't find vote id "${req.params.id}".`,
+      msg: msg || e,
       code: 0,
       status: 'error'
     });
