@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+      crossorigin="anonymous"
+    />
+    <style>
+      button {
+        width: 80px;
+        margin-right: 10px;
+      }
+      div:not(:first-child) {
+        margin: 20px 0;
+      }
+      input {
+        color: #555;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+    </style>
+    <title>Voting API examples</title>
+  </head>
+  <body>
+    <script>
+      const base_url = 'https://voting-api-demo.herokuapp.com';
+
+      const request = async (func) => {
+        try {
+          const {
+            data: { data }
+          } = await func;
+
+          const output = data ? data : 'ok';
+
+          setResult(output);
+        } catch ({ response }) {
+          const {
+            data: { msg }
+          } = response;
+
+          setResult(msg);
+        }
+      };
+
+      const getVotes = () => axios.get(`${base_url}/votes`);
+
+      const getVote = () => {
+        const id = document.querySelector('#getId').value;
+
+        return axios.get(`${base_url}/vote/${id}`);
+      };
+
+      const postVote = () => {
+        const title = document.querySelector('#postTitle').value;
+
+        return axios.post(`${base_url}/vote`, title ? { title } : {});
+      };
+
+      const updateVote = () => {
+        const id = document.querySelector('#updateId').value;
+
+        const option = document.querySelector('#updateOption').value;
+
+        const title = document.querySelector('#updateTitle').value;
+
+        const data = {
+          id: id || undefined,
+          option: option || undefined,
+          title: title || undefined
+        };
+
+        return axios.patch(`${base_url}/vote`, data);
+      };
+
+      const deleteVote = () => {
+        const id = document.querySelector('#deleteId').value;
+
+        return axios.delete(`${base_url}/vote/${id}`);
+      };
+
+      const setResult = (result) => {
+        if (result) {
+          console.log(result);
+
+          const output =
+            typeof result === 'string'
+              ? `<span class="text-danger">${result}</span>`
+              : JSON.stringify(result, null, 2);
+
+          document.querySelector('#result').innerHTML = output;
+        }
+      };
+    </script>
+
+    <div class="container">
+      <div>
+        <button class="btn btn-primary" onclick="request(getVotes())">
+          get all
+        </button>
+      </div>
+
+      <div>
+        <button class="btn btn btn-info" onclick="request(getVote())">
+          get one
+        </button>
+        <input id="getId" type="text" placeholder="id" />
+      </div>
+
+      <div>
+        <button class="btn btn-success" onclick="request(postVote())">
+          post
+        </button>
+        <input id="postTitle" type="text" placeholder="title(optional)" />
+      </div>
+
+      <div>
+        <button class="btn btn-warning" onclick="request(updateVote())">
+          update
+        </button>
+        <input id="updateId" type="text" placeholder="id" />
+        <input id="updateOption" type="text" placeholder="win/lose/draw" />
+        <input id="updateTitle" type="text" placeholder="title(optional)" />
+      </div>
+
+      <div>
+        <button class="btn btn-danger" onclick="request(deleteVote())">
+          delete
+        </button>
+        <input id="deleteId" type="text" placeholder="id" />
+      </div>
+    </div>
+
+    <div id="result" class="container"></div>
+  </body>
+</html>

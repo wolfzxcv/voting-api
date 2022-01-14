@@ -1,7 +1,5 @@
 {
-  "whitelist": [
-    "Yui5_2-OhmRKOlNEET4UE"
-  ],
+  "whitelist": ["Yui5_2-OhmRKOlNEET4UE", "Gnlkv9QCre4NYZPSWuAUT"],
   "votes": [
     {
       "id": "Yui5_2-OhmRKOlNEET4UE",
@@ -10,6 +8,15 @@
         "win": 85,
         "lose": 72,
         "draw": 25
+      }
+    },
+    {
+      "id": "Gnlkv9QCre4NYZPSWuAUT",
+      "title": "reserved",
+      "result": {
+        "win": 172,
+        "lose": 145,
+        "draw": 53
       }
     }
   ]
